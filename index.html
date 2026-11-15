@@ -440,7 +440,7 @@ function exportSheet(lev,rows,done){
     <div class="muted">${closed} postes cerrados${drafts?` · ${drafts} borrador (no se incluye)`:''}</div>
     <label class="l" style="display:flex;gap:10px;align-items:center;text-transform:none;font-size:17px;color:var(--ink)"><input type="checkbox" id="wp" checked style="width:24px;height:24px"> Incluir fotos (archivo .zip)</label>
     <div class="hint">Las fotos se guardan como IMG_AAAAMMDD_HHMMSS.jpg dentro de la carpeta “fotos”.</div>
-    <div class="grid"><button class="btn" data-share>Compartir (Drive, WhatsApp, correo…)</button><button class="btn sec" data-dl>Descargar en el teléfono</button><button class="btn sec" data-x>Cerrar</button></div>
+    <div class="grid"><button class="btn" data-share>Exportar</button><button class="btn sec" data-x>Cerrar</button></div>
     <div class="hint" id="msg"></div>`);
   const run=async share=>{
     if(!closed){toast('No hay postes cerrados',true);return;}
@@ -454,11 +454,20 @@ function exportSheet(lev,rows,done){
       }
       if(!ok){const a=document.createElement('a');a.href=URL.createObjectURL(out.blob);a.download=out.name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);}
       lev.lastExport=Date.now();lev.updated=Math.min(lev.updated,lev.lastExport);await dbPut('levs',lev);
-      s.close();toast('Exportado ✓ '+out.name);done();
+      s.close();done();
+      if(ok){toast('Exportado ✓ '+out.name);return;}
+      const h=sheet(`<h2>✓ Guardado en Descargas</h2>
+        <div class="card" style="margin-top:10px"><b>${esc(out.name)}</b></div>
+        ${share?'<div class="muted" style="margin-bottom:8px">Chrome no deja compartir archivos .xlsx ni .zip directo desde la app, así que quedó guardado en el teléfono.</div>':''}
+        <div style="font-weight:800;margin-top:6px">Para mandarlo:</div>
+        <div class="card" style="margin-top:8px"><b>Drive:</b> abre Drive → <b>＋</b> → <b>Subir</b> → <b>Descargas</b> → elige el archivo. Sin señal queda en cola y se sube solo después.</div>
+        <div class="card"><b>WhatsApp:</b> en el chat → <b>📎 Adjuntar</b> → <b>Documento</b> → elige el archivo.</div>
+        <div class="card"><b>Correo:</b> adjuntar → <b>Descargas</b> → elige el archivo.</div>
+        <div class="grid"><button class="btn" data-x>Entendido</button></div>`);
+      h.el.querySelector('[data-x]').onclick=h.close;
     }catch(e){$('#msg',s.el).textContent='Error al exportar: '+e.message;}
   };
   s.el.querySelector('[data-share]').onclick=()=>run(true);
-  s.el.querySelector('[data-dl]').onclick=()=>run(false);
   s.el.querySelector('[data-x]').onclick=s.close;
 }
 
